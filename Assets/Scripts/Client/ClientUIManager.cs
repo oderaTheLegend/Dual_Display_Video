@@ -14,8 +14,9 @@ public class ClientUIManager : MonoBehaviour
     [SerializeField] GameObject connectionStatusIndicator;
     [Tooltip("Buttons for selecting videos.")]
     [SerializeField] Button[] videoButtons;
-    [SerializeField] TextMeshProUGUI statusText;
-
+    [SerializeField] TMP_Text statusText;
+    [SerializeField] float revealDuration = 1f;
+    [SerializeField] float displayDuration = 3f;
     [Header("Button Animation")]
     [Tooltip("The transform that should be rotated when a button is used.")]
     [SerializeField] Transform[] buttonParents;
@@ -46,6 +47,8 @@ public class ClientUIManager : MonoBehaviour
 
     private void InitializeButtonListeners()
     {
+        //StatusTextUpdate("You are not connected");
+
         foreach (Button button in videoButtons)
             button.onClick.AddListener(() => OnVideoButtonClicked(button));
     }
@@ -73,7 +76,7 @@ public class ClientUIManager : MonoBehaviour
 
         messageHandler.SendMessageToServer($"PlayVideo:{buttonIndex}");
 
-        statusText.text = $"Video {buttonIndex + 1} is playing currently.";
+        StatusTextUpdate($"Video {buttonIndex + 1} is playing currently.");
     }
 
     /// <summary>
@@ -89,12 +92,14 @@ public class ClientUIManager : MonoBehaviour
         videoButtons[buttonIndex].interactable = false;
     }
 
+    public void StatusTextUpdate(string text) => statusText.text = text;
+
     /// <summary>
     /// Video has ended so will reset buttons
     /// </summary>
     public void OnVideoEnded()
     {
-        statusText.text = "Please choose what you want to see.";
+        StatusTextUpdate("Please pick another video");
 
         if (currentlySelectedButton != null)
         {
@@ -166,8 +171,6 @@ public class ClientUIManager : MonoBehaviour
     public void ResetEntireUI()
     {
         ResetVideoSelectionUI();
-        statusText.text = "Please choose what you want to see.";
-        connectionStatusIndicator.SetActive(true);
         connectionStatusIndicator.GetComponent<Image>().DOFade(1, 0.5f);
     }
 }

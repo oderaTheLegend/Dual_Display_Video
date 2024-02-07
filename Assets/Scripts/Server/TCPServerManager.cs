@@ -43,25 +43,37 @@ public class TCPServerManager : MonoBehaviour
         {
             try
             {
-                IPAddress ipAddress = IPAddress.Parse(this.ipAddress);
                 tcpListener = new TcpListener(IPAddress.Any, port);
                 tcpListener.Start();
                 Debug.Log("Server started.");
 
                 while (serverRunning)
                 {
-                    TcpClient connectedTcpClient = tcpListener.AcceptTcpClient();
-                    ThreadPool.QueueUserWorkItem(HandleClient, connectedTcpClient);
+                    TcpClient tempClient = tcpListener.AcceptTcpClient();
+
+                    if (connectedTcpClient != null && connectedTcpClient.Connected)
+                    {
+                        Debug.Log("Another client attempted to connect, but a client is already connected. Rejecting new connection.");
+                        tempClient.Close(); 
+                    }
+                    else
+                    {
+                        connectedTcpClient = tempClient; 
+                        Debug.Log("Client connected.");
+                        ThreadPool.QueueUserWorkItem(HandleClient, connectedTcpClient);
+                    }
                 }
             }
             catch (SocketException e)
             {
                 Debug.LogError($"SocketException: {e.Message}");
             }
-            catch (Exception e)
+            finally
             {
-                Debug.LogError($"Failed to start server: {e.Message}. Retrying in 5 seconds...");
-                Thread.Sleep(5000);
+                if (tcpListener != null)
+                {
+                    tcpListener.Stop();
+                }
             }
         })
         {
@@ -98,10 +110,40 @@ public class TCPServerManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Sends a message to the connected client.
+    /// </summary>
+    /// <param name="message">The message to send.</param>
+    public void SendMessageToClient(string message)
+    {
+        if (connectedTcpClient != null && connectedTcpClient.Connected)
+        {
+            try
+            {
+                NetworkStream stream = connectedTcpClient.GetStream();
+                if (stream.CanWrite)
+                {
+                    byte[] serverMessageAsByteArray = Encoding.ASCII.GetBytes(message);
+                    stream.Write(serverMessageAsByteArray, 0, serverMessageAsByteArray.Length);
+                    Debug.Log($"Server sent message: {message}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to send message to client: {e.Message}");
+            }
+        }
+        else
+        {
+            Debug.LogError("No client connected to send a message.");
+        }
+    }
+
+    /// <summary>
     /// Shuts down the server and releases all resources.
     /// </summary>
     private void ShutdownServer()
     {
+        SendMessageToClient("Reset");
         tcpListenerThread?.Abort();
         tcpListener?.Stop();
         connectedTcpClient?.Close();

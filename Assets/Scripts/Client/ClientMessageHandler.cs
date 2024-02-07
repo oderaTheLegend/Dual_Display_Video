@@ -39,6 +39,7 @@ public class ClientMessageHandler : MonoBehaviour
             else if (message.StartsWith("Reset"))
             {
                 Debug.Log("Server requested a reset.");
+                tcpConnection.Disconnect();
                 uiManager.ResetEntireUI();
             }
         });

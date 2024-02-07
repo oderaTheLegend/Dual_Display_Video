@@ -10,6 +10,7 @@ using System.Collections;
 /// </summary>
 public class VideoPlaybackController : MonoBehaviour
 {
+    [SerializeField] TCPServerManager tcpServerManager;
     [Header("Video Playback Settings")]
     [Tooltip("Video player component used for displaying videos.")]
     public VideoPlayer videoPlayer;
@@ -128,6 +129,7 @@ public class VideoPlaybackController : MonoBehaviour
 
             PerformFade(0, 0.5f, () =>
             {
+                tcpServerManager.SendMessageToClient("VideoEnded");
                 isStaticScreenShown = true;
                 StopInactivityTimer();
             });

@@ -180,7 +180,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Please choose what you want to see.
+  m_text: You are not connected
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 6749079c55c192340ac361e6227e227d, type: 2}
   m_sharedMaterial: {fileID: 8997932493352976618, guid: 6749079c55c192340ac361e6227e227d, type: 2}
@@ -677,6 +677,8 @@ MonoBehaviour:
   - {fileID: 1186936657}
   - {fileID: 1201744377}
   statusText: {fileID: 238255112}
+  revealDuration: 1
+  displayDuration: 3
   buttonParents:
   - {fileID: 910415675}
   - {fileID: 1186936656}

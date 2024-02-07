@@ -60,10 +60,15 @@ public class TCPConnection : MonoBehaviour
         {
             try
             {
-                socketConnection = new TcpClient(serverIP, port);
+                socketConnection = new TcpClient();
+                socketConnection.Connect(serverIP, port);
                 Debug.Log("Connected to server.");
 
-                UnityMainThreadDispatcher.Instance.Enqueue(() => uiManager.UpdateConnectionStatus(true));
+                UnityMainThreadDispatcher.Instance.Enqueue(() =>
+                {
+                    uiManager.UpdateConnectionStatus(true);
+                    uiManager.StatusTextUpdate("You are connected");
+                });
 
                 Thread receiveThread = new Thread(ReceiveData);
                 receiveThread.IsBackground = true;
@@ -73,14 +78,17 @@ public class TCPConnection : MonoBehaviour
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to connect: {ex.Message}");
+                Debug.LogError($"Failed to connect: {ex.Message}. Retrying in {retryInterval} seconds...");
+                UnityMainThreadDispatcher.Instance.Enqueue(() => uiManager.UpdateConnectionStatus(false));
+
                 Thread.Sleep(TimeSpan.FromSeconds(retryInterval));
             }
         }
 
-        if (!socketConnection.Connected)
+        if (!isRunning || (socketConnection != null && !socketConnection.Connected))
             UnityMainThreadDispatcher.Instance.Enqueue(() => uiManager.UpdateConnectionStatus(false));
     }
+
 
     /// <summary>
     /// Registers a callback to be invoked when a message is received from the server.
@@ -157,12 +165,12 @@ public class TCPConnection : MonoBehaviour
         if (clientThread != null && clientThread.IsAlive)
             clientThread.Interrupt();
 
+        UnityMainThreadDispatcher.Instance.Enqueue(() => uiManager.UpdateConnectionStatus(false));
+
+        Invoke(nameof(ConnectToServer), retryInterval);
+
         Debug.Log("Disconnected from server.");
     }
 
-    void OnApplicationQuit()
-    {
-        Disconnect();
-        UnityMainThreadDispatcher.Instance.Enqueue(() => uiManager.UpdateConnectionStatus(false));
-    }
+    void OnApplicationQuit() => Disconnect();
 }
