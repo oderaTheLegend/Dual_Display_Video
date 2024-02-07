@@ -15,8 +15,6 @@ public class ClientUIManager : MonoBehaviour
     [Tooltip("Buttons for selecting videos.")]
     [SerializeField] Button[] videoButtons;
     [SerializeField] TMP_Text statusText;
-    [SerializeField] float revealDuration = 1f;
-    [SerializeField] float displayDuration = 3f;
     [Header("Button Animation")]
     [Tooltip("The transform that should be rotated when a button is used.")]
     [SerializeField] Transform[] buttonParents;
@@ -26,6 +24,7 @@ public class ClientUIManager : MonoBehaviour
     [SerializeField] Vector3 usedRotation = new Vector3(0, 0, -114);
     [Header("Animation Settings")]
     [Tooltip("Time it takes for the button to rotate back to the default position.")]
+    [SerializeField] private float interactionDelay = 1.5f;
     [SerializeField] float rotationResetDuration = 0.5f;
     [Header("Button Colors")]
     [Tooltip("The color of the button circle when it is interactable.")]
@@ -33,9 +32,8 @@ public class ClientUIManager : MonoBehaviour
     [Tooltip("The color of the button hover when it is interactable.")]
     [SerializeField] Color hoverActiveColor = Color.green;
     [SerializeField] ClientMessageHandler messageHandler;
-
     private Button currentlySelectedButton = null;
-
+    private bool isInteractionLocked = false;
     public Image[] buttonCircles;
     public Image[] buttonHovers;
 
@@ -58,6 +56,11 @@ public class ClientUIManager : MonoBehaviour
     /// </summary>
     private void OnVideoButtonClicked(Button button)
     {
+        if (isInteractionLocked) return; 
+
+        isInteractionLocked = true; 
+        StartCoroutine(DelayInteraction());
+
         int buttonIndex = System.Array.IndexOf(videoButtons, button);
         if (buttonIndex < 0)
         {
@@ -90,6 +93,23 @@ public class ClientUIManager : MonoBehaviour
         buttonHovers[buttonIndex].color = hoverActiveColor;
 
         videoButtons[buttonIndex].interactable = false;
+    }
+
+    IEnumerator DelayInteraction()
+    {
+        SetButtonsInteractable(false);
+
+        yield return new WaitForSeconds(interactionDelay);
+
+        SetButtonsInteractable(true);
+
+        isInteractionLocked = false; 
+    }
+
+    private void SetButtonsInteractable(bool interactable)
+    {
+        foreach (var button in videoButtons)
+            button.interactable = interactable;
     }
 
     public void StatusTextUpdate(string text) => statusText.text = text;
